@@ -1,0 +1,94 @@
+import selenium.webdriver as webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager 
+from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
+import time
+import pandas as pd
+
+options = Options()
+options.add_experimental_option("detach",True)
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+driver.maximize_window()
+
+# Create xlwriter
+xlwriter = pd.ExcelWriter('Apartments_Condominiums_SGPrices.xlsx')
+
+# Open URL
+driver.get("https://www.ura.gov.sg/realEstateIIWeb/transaction/search.action")
+wait = WebDriverWait(driver, 10)
+wait.until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+tos = ["4","5","6"]
+
+# Select Type of Sales
+for k in tos:
+    table_data = []
+
+# Select Districts
+    for i in range(0,27,5):
+
+        # Select find by district tab
+        tab = driver.find_element(By.XPATH,"//a[@aria-controls='district']")
+        tab.click()
+
+        # Change Date
+        select = Select(driver.find_element(By.XPATH,'//select[@id="searchForm_selectedFromPeriodPostalDistrict"]'))
+        select.select_by_value('JAN 2023')
+
+        # Select Property Type
+        property_type = driver.find_element(By.XPATH,'//label[@for="radio3ac"]')
+        property_type.click()
+
+        # Selet Type of sales
+        Type_of_sale = driver.find_element(By.XPATH,'//label[@for="checkbox{}"]'.format(k))
+        Type_of_sale.click()
+
+        # Select Districts
+        for j in range (i,i+5):
+            try:
+                district = driver.find_element(By.XPATH,'//a[@id="addToPostal_{}"]'.format(j))
+                district.click()
+                time.sleep(0.5)
+            except:
+                continue
+
+        submit_button = driver.find_element(By.XPATH,'//input[@id="transSearchPd"]')
+        submit_button.click()
+        time.sleep(1)
+        
+        try:
+            main_table = driver.find_element(By.CLASS_NAME,'table')
+
+            table_header = []
+            list_tag_header = main_table.find_element(By.TAG_NAME,'thead')
+            header_data = [th.text for th in list_tag_header.find_elements(By.TAG_NAME,'th')]
+            table_header.append(header_data)
+
+            list_tag_body = driver.find_element(By.TAG_NAME,'tbody')
+            list_tag_tr = list_tag_body.find_elements(By.TAG_NAME,'tr')
+            for tr in list_tag_tr:
+                try:
+                    list_tag_td = [td.text for td in tr.find_elements(By.TAG_NAME,'td')]
+                    print(list_tag_td)
+                    table_data.append(list_tag_td)
+                except:
+                    print("No Td!")
+    
+            modify_search = driver.find_element(By.ID,'searchLink')
+            modify_search.click()
+            time.sleep(1)
+        
+        except:
+            back_button = driver.find_element(By.CLASS_NAME,'btn')
+            back_button.click()
+            time.sleep(1)
+
+    df = pd.DataFrame(table_data,columns=table_header)
+    df.to_excel(xlwriter, sheet_name=k,index=False)
+
+xlwriter.save()
+xlwriter.close()
