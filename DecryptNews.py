@@ -27,8 +27,8 @@ for url in urls:
     today = date.today()
     d1 = today.strftime("%d_%m_%Y")
     print(f'Scraping {url}...')
-    xlwriter = pd.ExcelWriter('News.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay')
-    existing_data = pd.read_excel('News.xlsx', engine='openpyxl', sheet_name=SHEET_NAME)
+    xlwriter = pd.ExcelWriter('//Users/jonathanyong/ExcelFiles/News.xlsx', engine='openpyxl', mode='a', if_sheet_exists='overlay')
+    existing_data = pd.read_excel('//Users/jonathanyong/ExcelFiles/News.xlsx', engine='openpyxl', sheet_name=SHEET_NAME)
     workbook = xlwriter.book
     
     site = driver.page_source
